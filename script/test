@@ -1,0 +1,36 @@
+#!/usr/bin/env ruby
+
+if ARGV.empty?
+  puts <<-EOH
+Usage:
+  script/test [test match string]
+
+Example:
+  script/test site
+  script/test site_test
+  script/test site_test account_test
+
+  Above would run all tests matching site
+  (ie: test/unit/site_test.rb, test/functional/admin/sites_controller.rb, etc.)
+
+EOH
+  exit
+end
+
+root_path = File.expand_path("../../", __FILE__)
+
+Dir.chdir(root_path) do
+  tests = Dir.glob('test/**/*_test.rb').map do |file|
+    # check if any of the inputs match the file
+    file if ARGV.any? { |match| file =~ /#{match}/ }
+  end.compact.join(' ')
+
+  test_loader = File.expand_path('../test_loader', __FILE__)
+
+  $stdout.sync = true
+  command = "ruby -Itest #{test_loader} #{tests}"
+
+  puts(command)
+
+  IO.popen(command) { |com| com.each_char { |c| print(c) } }
+end
